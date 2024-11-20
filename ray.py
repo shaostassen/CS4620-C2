@@ -255,7 +255,7 @@ class SquareTexture:
         ])
         # Add some epsilon to avoid singular matrix
         # print(np.linalg.det(self.A))
-        print(self.A)
+        # print(self.A)
         # self.A += 1e-6 * np.eye(3)
         for i in range(4):
             # B = np.array([vs[i][0], vs[i][1]])
@@ -304,6 +304,202 @@ class SquareTexture:
             "texture": "embedded",  # Assuming the texture will be encoded separately
         }
 
+class Ellipsoid:
+    def __init__(self, center, radii, material):
+        """Create an ellipsoid with the given center and radii."""
+        self.center = center
+        self.radii = radii
+        self.material = material
+        
+    def _transform_ray_to_local_space(self, ray):
+        """
+        Translate the ray's origin to the ellipsoid's local coordinate system.
+        """
+        local_origin = ray.origin - self.center
+        local_direction = ray.direction
+        return local_origin, local_direction
+    def _quadratic_coefficients(self, ray_origin, ray_direction):
+        """
+        Calculate coefficients for the quadratic equation of intersection.
+        """
+        inv_radii_sq = 1 / np.square(self.radii)
+        A = np.sum(inv_radii_sq * np.square(ray_direction))
+        B = 2 * np.sum(inv_radii_sq * ray_origin * ray_direction)
+        C = np.sum(inv_radii_sq * np.square(ray_origin)) - 1
+        return A, B, C
+    def intersect(self, ray):
+        """
+        Compute the intersection of the ellipsoid with a ray.
+        """
+        # Transform ray to ellipsoid's local space
+        local_origin, local_direction = self._transform_ray_to_local_space(ray)
+        # Compute quadratic coefficients
+        A, B, C = self._quadratic_coefficients(local_origin, local_direction)
+        # Solve the quadratic equation
+        roots = np.roots([A, B, C])
+        real_roots = [t for t in roots if np.isreal(t)]
+        real_roots = np.real(real_roots)
+        # Find the closest valid intersection point
+        t_min = float("inf")
+        for t in real_roots:
+            if ray.start <= t <= ray.end and t < t_min:
+                t_min = t
+        if t_min == float("inf"):
+            return no_hit
+        # Compute intersection details
+        intersection_point = ray.origin + t_min * ray.direction
+        normal = self.compute_normal(intersection_point)
+        return Hit(t_min, intersection_point, normal, self.material)
+    def compute_normal(self, point):
+        """
+        Calculate the normal vector at a given point on the ellipsoid's surface.
+        
+        Args:
+            point (array-like): Point on the ellipsoid surface.
+        
+        Returns:
+            array: Normalized normal vector.
+        """
+        local_normal = (point - self.center) / np.square(self.radii)
+        return local_normal / np.linalg.norm(local_normal)
+class Torus:
+    def __init__(self, center, big_radius, small_radius, material, euler_angles):
+        """Create a torus with the given center and radii.
+        Parameters:
+          center : (3,) -- a 3D point specifying the torus's center
+          r1 : float -- a Python float specifying the torus's minor radius
+          r2 : float -- a Python float specifying the torus's major radius
+          material : Material -- the material of the surface
+          euler_angles : (3,) -- the Euler angles for the torus
+        """
+        self.center = np.asarray(center, dtype=np.float64)
+        self.big_radius = big_radius
+        self.small_radius = small_radius
+        self.material = material
+        self.euler_angles = euler_angles
+    def _compute_rotation_matrix(self):
+        """Compute combined rotation matrix from the Euler angles."""
+        def euler_x(theta):
+            return np.array([[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]])
+        def euler_y(phi):
+            return np.array([[np.cos(phi), 0, np.sin(phi)], [0, 1, 0], [-np.sin(phi), 0, np.cos(phi)]])
+        def euler_z(psi):
+            return np.array([[np.cos(psi), -np.sin(psi), 0], [np.sin(psi), np.cos(psi), 0], [0, 0, 1]])
+        return euler_z(self.euler_angles[2]) @ euler_y(self.euler_angles[1]) @ euler_x(self.euler_angles[0])
+        
+    def intersect(self, ray):
+        """
+        Calculate intersection between the torus and a ray.
+        
+        Args:
+            ray (Ray): Ray object containing origin, direction, and bounds.
+        
+        Returns:
+            Hit: Intersection data or no hit.
+        """
+        euler_angles = self._compute_rotation_matrix()
+        inverse_matrix = np.linalg.inv(euler_angles)
+        local_origin = inverse_matrix @ (ray.origin - self.center)
+        local_direction = normalize(inverse_matrix @ ray.direction)
+        ray = Ray(local_origin, local_direction, ray.start, ray.end)
+        ray_origin = ray.origin
+        ray_direction = ray.direction
+        # Calculate the coefficients for the quartic equation
+        R, r = self.big_radius, self.small_radius
+        origin_product = np.dot(ray_origin, ray_origin)
+        direction_product = np.dot(ray_direction, ray_direction)
+        origin_direction_product = np.dot(ray_origin, ray_direction)
+        R2, r2 = R ** 2, r ** 2
+        A = direction_product ** 2
+        B = 4 * direction_product * origin_direction_product
+        C = 2 * direction_product * (origin_product - R2 - r2) + 4 * R2 * (local_direction[2] ** 2) + 4 * origin_direction_product ** 2
+        D = 4 * (origin_product - R2 - r2) * origin_direction_product + 8 * R2 * local_direction[2] * local_origin[2]
+        E = (origin_product - R2 - r2) ** 2 - 4 * R2 * (r2 - local_origin[2] ** 2)
+        # Solve the equation
+        solution = np.roots([A, B, C, D, E])
+        real = [np.real(sol) for sol in solution if np.isreal(sol) and ray.start <= sol <= ray.end]
+        if not real:
+            return no_hit
+      
+        closest = min(real)
+        hit_point = local_origin + closest * local_direction
+        projected = hit_point.copy()
+        projected[2] = 0
+        projected_radius_vector = projected / np.linalg.norm(projected) * self.big_radius
+        local_normal = normalize(hit_point - projected_radius_vector)
+        world_normal = euler_angles @ local_normal
+        world_intersection = euler_angles @ hit_point + self.center
+        return Hit(closest, world_intersection, world_normal, self.material)
+    
+class Cyclinder: 
+    def __init__(self, base, axis, radius, height, material):
+        """
+        Initialize a cylinder for ray tracing.
+        Args:
+            base (array-like): The 3D coordinates of the base center of the cylinder.
+            axis (array-like): The normalized direction vector of the cylinder's axis.
+            radius (float): The radius of the cylinder.
+            height (float): The height of the cylinder.
+            material (Material): The material of the cylinder's surface.
+        """
+        self.base = np.asarray(base, dtype=np.float64)
+        self.axis = np.asarray(axis, dtype=np.float64)
+        self.radius = radius
+        self.height = height
+        self.material = material
+    def intersect(self, ray):
+        """
+        Calculate the intersection of a ray with the cylinder.
+        Args:
+            ray (Ray): The ray to intersect with the cylinder.
+        Returns:
+            Hit: Intersection details or no hit.
+        """
+        # Step 1: Compute auxiliary vectors
+        dp = ray.origin - self.base
+        v = ray.direction - np.dot(ray.direction, self.axis) * self.axis
+        w = dp - np.dot(dp, self.axis) * self.axis
+        # Step 2: Quadratic coefficients
+        a = np.dot(v, v)
+        b = 2 * np.dot(v, w)
+        c = np.dot(w, w) - self.radius**2
+        # Step 3: Solve quadratic equation
+        roots = np.roots([a, b, c])
+        real_roots = [t for t in roots if np.isreal(t)]
+        real_roots = np.real(real_roots)
+        # Step 4: Filter valid roots within cylinder bounds
+        t_min = float("inf")
+        intersection_point = None
+        for t in real_roots:
+            if ray.start <= t <= ray.end:
+                point = ray.origin + t * ray.direction
+                height_from_base = np.dot(point - self.base, self.axis)
+                # Check if point lies within the cylinder's height
+                if 0 <= height_from_base <= self.height and t < t_min:
+                    t_min = t
+                    intersection_point = point
+        if t_min == float("inf"):
+            return no_hit
+        # Step 5: Compute the surface normal at the intersection
+        normal = self.compute_normal(intersection_point)
+        return Hit(t_min, intersection_point, normal, self.material)
+    def compute_normal(self, point):
+        """
+        Compute the surface normal at a given point on the cylinder.
+        Args:
+            point (array-like): The point on the cylinder's surface.
+        Returns:
+            array: Normalized normal vector.
+        """
+        # Project the point onto the cylinder axis
+        to_point = point - self.base
+        projection_length = np.dot(to_point, self.axis)
+        axis_projection = self.base + projection_length * self.axis
+        # Compute the vector perpendicular to the axis
+        normal = point - axis_projection
+        return normal / np.linalg.norm(normal)   
+        
+        
 class Camera:
 
     def __init__(self, eye=vec([0,0,0]), target=vec([0,0,-1]), up=vec([0,1,0]), 

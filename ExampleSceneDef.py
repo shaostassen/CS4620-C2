@@ -235,9 +235,66 @@ def LebronJamesExample():
     importlib.reload(ray)
     tan = ray.Material(vec([0.7, 0.7, 0.4]))
 
-    # rot_mat_45 = np.array([[np.sqrt(2)/2, -np.sqrt(2)/2, 0],
-    #                        [np.sqrt(2)/2, np.sqrt(2)/2, 0],
-    #                        [0, 0, 1]])
+    theta = np.deg2rad(45)
+    rot_mat_45 = np.array([[np.cos(theta), -np.sin(theta), 0],
+                           [np.sin(theta), np.cos(theta), 0],
+                           [0, 0, 1]])
+    rot_mat_y = np.array([[np.cos(theta), 0, np.sin(theta)],
+                          [0, 1, 0],
+                          [-np.sin(theta), 0, np.cos(theta)]])
+    # rot_mat_y = rot_mat_y @ rot_mat_45
+    rot_mat_y = np.eye(3)
+    # organize a cube
+    scene = ray.Scene([
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+        ], tan, texture="lebron.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron2.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron3.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+            vec(rot_mat_y @ [0, 1, -1]),
+        ], tan, texture="lebron4.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [0, 1, 0]),
+        ], tan, texture="lebron5.png"),
+    ] ,bg_color=vec([0, 0, 0]),
+    )
+
+    lights = [
+        ray.AmbientLight(1),
+    ]
+
+    # camera = ray.Camera(vec([.5, .5, .75]), target=vec([0.5, 0.5, -0.5]), vfov=90, aspect=1)
+    # Create line from center to the corner of the cube
+    line = vec([0, 1, -1]) - vec([0.5, 0.5, -0.5])
+    line = line / np.linalg.norm(line)
+    origin = line * 1.5 + vec([0.5, 0.5, -0.5])
+    camera = ray.Camera(origin, target=vec([0.5, 0.5, -0.5]), vfov=60, aspect=1)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+
+def LebronCrownExample():
+    importlib.reload(ray)
+    tan = ray.Material(vec([0.7, 0.7, 0.4]))
 
     theta = np.deg2rad(45)
     rot_mat_45 = np.array([[np.cos(theta), -np.sin(theta), 0],
@@ -280,6 +337,8 @@ def LebronJamesExample():
             vec(rot_mat_y @ [0, 1, -1]),
             vec(rot_mat_y @ [0, 1, 0]),
         ], tan, texture="lebron5.png"),
+        ray.Torus(vec([0, 0, 4]), 1, 1.5, tan, vec([np.pi/3,0,np.pi/6])),
+        #ray.Cylinder(vec([0.5, 0.5, -0.5]), vec([0, 1, 0]), 0.1, 0.3, tan)
     ] ,bg_color=vec([0, 0, 0]),
     )
 
