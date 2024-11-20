@@ -104,3 +104,108 @@ def OrthoFriendlyExample(sphere_radius = 0.25):
     ]
     camera = ray.Camera(vec([0,0,0]), target=vec([0, 0, -0.5]), vfov=90, aspect=1)
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+def CornellBoxExample():
+    importlib.reload(ray)
+    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=1)
+    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=1)
+    white = ray.Material(vec([0.7, 0.7, 0.7]), k_m=1)
+    blue = ray.Material(vec([0.1, 0.1, 0.7]), k_m=1)
+    gray = ray.Material(vec([0.2, 0.2, 0.2]), k_m=1)
+    # tan = ray.Material(vec([0.7, 0.7, 0.4]), 0.6)
+    tan = red
+
+    scene = ray.Scene([
+        ray.Triangle([vec([0, 0, 0]), vec([1, 0, 0]), vec([0, 1, 0])], white),
+        ray.Triangle([vec([1, 1, 0]), vec([0, 1, 0]), vec([1, 0, 0])], white),
+        ray.Triangle([vec([0, 0, 0]), vec([0, 0, 1]), vec([1, 0, 0])], red),
+        ray.Triangle([vec([1, 0, 1]), vec([1, 0, 0]), vec([0, 0, 1])], red),
+        ray.Triangle([vec([0, 0, 0]), vec([0, 1, 0]), vec([0, 0, 1])], green),
+        ray.Triangle([vec([0, 1, 1]), vec([0, 0, 1]), vec([0, 1, 0])], green),
+        ray.Triangle([vec([1, 0, 0]), vec([1, 0, 1]), vec([1, 1, 0])], blue),
+        ray.Triangle([vec([1, 1, 1]), vec([1, 1, 0]), vec([1, 0, 1])], blue),
+        ray.Triangle([vec([0, 1, 0]), vec([1, 1, 0]), vec([0, 1, 1])], gray),
+        ray.Triangle([vec([1, 1, 1]), vec([0, 1, 1]), vec([1, 1, 0])], gray),
+        # make back wall
+        ray.Triangle([vec([0, 0, 1]), vec([1, 0, 1]), vec([0, 1, 1])], white),
+        ray.Triangle([vec([1, 1, 1]), vec([0, 1, 1]), vec([1, 0, 1])], white),
+        ray.Sphere(vec([0.3, 0.3, 0.3]), 0.2, tan),
+    ], bg_color=vec([0,0,0]))
+
+    lights = [
+        ray.PointLight(vec([0.5, 0.5, 0.5]), .1),
+        # make a ceiling light
+        # ray.PointLight(vec([0.5, 0.5, 0.5]), vec([1, 1, 1])),
+        # Add another light source
+        # ray.PointLight(vec([1.5, 0.1, 0.5]), vec([1, 1, 1])),
+        # ray.PointLight(vec([-0.5, 0.5, 0.5]), vec([1, 1, 1])),
+        ray.AmbientLight(0.1),
+        # ray.PointLight(vec([0.5, 2, 0.5]), vec([2, 2, 2])),
+    ]
+
+    camera = ray.Camera(vec([0.75, 0.5, 1]), target=vec([0.5, 0.5, 0.5]), vfov=70, aspect=16 / 9)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+def LebronJamesExample():
+    importlib.reload(ray)
+    tan = ray.Material(vec([0.7, 0.7, 0.4]))
+
+    # rot_mat_45 = np.array([[np.sqrt(2)/2, -np.sqrt(2)/2, 0],
+    #                        [np.sqrt(2)/2, np.sqrt(2)/2, 0],
+    #                        [0, 0, 1]])
+
+    theta = np.deg2rad(45)
+    rot_mat_45 = np.array([[np.cos(theta), -np.sin(theta), 0],
+                           [np.sin(theta), np.cos(theta), 0],
+                           [0, 0, 1]])
+    rot_mat_y = np.array([[np.cos(theta), 0, np.sin(theta)],
+                          [0, 1, 0],
+                          [-np.sin(theta), 0, np.cos(theta)]])
+    # rot_mat_y = rot_mat_y @ rot_mat_45
+    rot_mat_y = np.eye(3)
+    # organize a cube
+    scene = ray.Scene([
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [0, 0, 0]),
+        #     vec(rot_mat_y @ [1, 0, 0]),
+        #     vec(rot_mat_y @ [0, 1, 0]),
+        #     vec(rot_mat_y @ [1, 1, 0]),
+        # ], tan, texture="lebron.png"),
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [1, 0, 0]),
+        #     vec(rot_mat_y @ [1, 0, -1]),
+        #     vec(rot_mat_y @ [1, 1, 0]),
+        #     vec(rot_mat_y @ [1, 1, -1]),
+        # ], tan, texture="lebron2.png"),
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [0, 1, 0]),
+        #     vec(rot_mat_y @ [1, 1, 0]),
+        #     vec(rot_mat_y @ [0, 1, -1]),
+        #     vec(rot_mat_y @ [1, 1, -1]),
+        # ], tan, texture="lebron3.png"),
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [1, 0, -1]),
+        #     vec(rot_mat_y @ [0, 0, -1]),
+        #     vec(rot_mat_y @ [1, 1, -1]),
+        #     vec(rot_mat_y @ [0, 1, -1]),
+        # ], tan, texture="lebron4.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [0, 1, 0]),
+        ], tan, texture="lebron5.png"),
+    ] ,bg_color=vec([0, 0, 0]),
+    )
+
+    lights = [
+        ray.AmbientLight(1),
+    ]
+
+    # camera = ray.Camera(vec([.5, .5, .75]), target=vec([0.5, 0.5, -0.5]), vfov=90, aspect=1)
+    # Create line from center to the corner of the cube
+    line = vec([0, 1, -1]) - vec([0.5, 0.5, -0.5])
+    line = line / np.linalg.norm(line)
+    origin = line * 1.5 + vec([0.5, 0.5, -0.5])
+    camera = ray.Camera(origin, target=vec([0.5, 0.5, -0.5]), vfov=60, aspect=1)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
