@@ -285,6 +285,51 @@ class SquareTexture:
             "material": self.material.serialize(),
             "texture": "embedded",  # Assuming the texture will be encoded separately
         }
+        
+class SphereTexture:
+    def __init__(self, center, radius, material, texture="basketball.png"):
+        self.material = Material(material.k_d, material.k_s, material.p, material.k_m, material.k_a, ("texture", self.query_texture))
+        self.sphere = Sphere(center, radius, self.material)
+        self.texture = cv2.imread(texture)
+        self.texture = cv2.cvtColor(self.texture, cv2.COLOR_BGR2RGB)
+    def intersect(self, ray):
+        # return self.sphere.intersect(ray)
+        hit = self.sphere.intersect(ray)
+        return Hit(hit.t, hit.point, hit.normal, self.material)
+    def query_texture(self, uv):
+        # Compute the spherical coordinates
+        uv = uv - self.sphere.center
+        # phi = np.arccos(uv[2] / self.sphere.radius)
+        phi = np.arccos(np.clip(uv[2] / self.sphere.radius, -1, 1))
+        theta = np.arctan2(uv[1], uv[0])
+        if theta < 0: theta += 2 * np.pi
+        
+        # Rotate thetas by 45 degrees
+        # theta += np.deg2rad(360-75)
+        # if theta > 2 * np.pi: theta -= 2 * np.pi
+        
+        # phi += np.deg2rad(90)
+        # if phi > np.pi: phi -= np.pi
+        
+        # theta += np.pi / 2
+        
+        # Compute the texture coordinates
+        x = int(theta / (2 * np.pi) * self.texture.shape[1])
+        y = int((1- (phi / np.pi)) * self.texture.shape[0])
+
+        # y, x = np.clip([y, x], 0, self.texture.shape[0] - 1)
+        y = np.clip(y, 0, self.texture.shape[0] - 1)
+        x = np.clip(x, 0, self.texture.shape[1] - 1)
+        return self.texture[y, x]
+        # return vec([.1,.1,.7])*255
+        
+    def serialize(self):
+        return {
+            "center": self.sphere.center.tolist(),
+            "radius": self.sphere.radius,
+            "material": self.sphere.material.serialize(),
+            "texture": "embedded",  # Assuming the texture will be encoded separately
+        }
 
 class Ellipsoid:
     def __init__(self, center, radii, material):
