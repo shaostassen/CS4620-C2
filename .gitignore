@@ -1,0 +1,14 @@
+fractal.py
+mandelbrot.py
+new_rubiks.mtl
+new_rubiks.obj
+rubiks_cube.mtl
+rubiks_cube.obj
+rubiks_cube2.mtl
+rubiks_cube2.obj
+RubiksCubeExample.png
+__pycache__/cornell_box.cpython-39.pyc
+__pycache__/ExampleSceneDef.cpython-39.pyc
+__pycache__/ImLite.cpython-39.pyc
+__pycache__/ray.cpython-39.pyc
+__pycache__/utils.cpython-39.pyc
