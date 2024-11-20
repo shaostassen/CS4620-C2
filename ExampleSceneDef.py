@@ -366,6 +366,50 @@ def LebronJamesExample():
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
 
 
+def GlassExample():
+    importlib.reload(ray)
+    tan = ray.Material(vec([0.7, 0.7, 0.4]), k_s=0.3, p=90, k_m=0.3)
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+    gray = ray.Material(vec([0.2, 0.2, 0.2]), k_m=0.4)
+    glass = ray.Material(vec([0, 0, 0]), k_m=0.4, k_a=0, k_s=0, transparent=True, n=1.1)
+
+    scene = ray.Scene([
+        ray.Sphere(vec([0, 0, 0]), 0.5, tan),
+        ray.Sphere(vec([0, -40, 0]), 39.5, gray),
+        ray.Torus(vec([-1, 0, 0]), 0.5, 0.1, vec([0,0,np.pi/2]), glass),
+        #ray.Sphere(vec([1, 0, 0]), 0.5, blue),
+    ])
+
+    lights = [
+        ray.PointLight(vec([12, 10, 5]), vec([300, 300, 300])),
+        ray.AmbientLight(0.1),
+    ]
+
+    camera = ray.Camera(vec([3, 1.7, 5]), target=vec([0, 0, 0]), vfov=25, aspect=16 / 9)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+def UnionExample():
+    importlib.reload(ray)
+    tan = ray.Material(vec([0.7, 0.7, 0.4]), k_s=0.3, p=90, k_m=0.3)
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+
+    obj1 = ray.Sphere(vec([0, 0, 0]), 2, tan)
+    obj2 = ray.Sphere(vec([0, 0, -1]), 2, blue)
+
+    scene = ray.Scene([
+        ray.ShapeBoolean(obj1, obj2, "union")
+    ])
+    lights = [
+        # ray.PointLight(vec([12, 10, 5]), vec([300, 300, 300])),
+        ray.AmbientLight(1),
+    ]
+
+    side_origin = vec([5, 0, 0])
+
+    camera = ray.Camera(eye=side_origin, target=vec([0,0,0]), vfov=90, aspect=16 / 9)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+
 def LebronCrownExample():
     importlib.reload(ray)
 
@@ -395,7 +439,6 @@ def LebronCrownExample():
     z_1 = 0.07
 
     e_height = 0.4 + 1.25
-
     red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=0.7, k_s=0.3)
     green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=0.7, k_s=0.3)
     blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=0.7, k_s=0.3)
@@ -459,7 +502,7 @@ def LebronCrownExample():
         ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x_1,  y_1, z_1]), blue_1),
         ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue_1),
         # gems
-        ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), red),
+        ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), glass),
         ray.Ellipsoid(vec([x-1.5*offset, y, z+0.6]), vec([gem_height, base, base]), green),
         ray.Ellipsoid(vec([x, y, z+1.0]), vec([gem_height, base, base]), blue_1),
         # ray.Ellipsoid(vec([x+offset, y, z+0.6]), vec([gem_height, base, base]), gold),
