@@ -539,10 +539,10 @@ def LebronCrownExample():
         ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
         ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
         ray.Sphere(vec([0, -40, 0]), 39.5, gray),
-        ray.ShapeCSG(ray.Cone(vec([-5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-5, 1.8, 1]), 0.5, gold2), "union")
-        ray.ShapeCSG(ray.Cone(vec([-2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-2, 1.8, 1]), 0.5, gold2), "union")
-        ray.ShapeCSG(ray.Cone(vec([2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([2, 1.8, 1]), 0.5, gold2), "union")
-        ray.ShapeCSG(ray.Cone(vec([5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([5, 1.8, 1]), 0.5, gold2), "union")
+        ray.ShapeCSG(ray.Cone(vec([-5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-5, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([-2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-2, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([2, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([5, 1.8, 1]), 0.5, gold2), "union"),
         
     ] ,bg_color=vec([0, 0, 0]),
     )
