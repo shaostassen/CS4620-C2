@@ -489,7 +489,6 @@ def LebronCrownExample():
         #     vec(rot_mat_y @ [0, 1, -1]),
         #     vec(rot_mat_y @ [0, 1, 0]),
         # ], tan, texture="lebron5.png"),
-        ray.Torus(vec([0, 0, 0]), 1.5, .5, tan, vec([np.deg2rad(90),0,0])),
         #ray.Cylinder(vec([0.5, 0.5, -0.5]), vec([0, 1, 0]), 0.1, 0.3, tan)
     ] ,bg_color=vec([0, 0, 0]),
     )
@@ -506,6 +505,6 @@ def LebronCrownExample():
     # line = vec([0, 2, 0]) - vec([0, 0, 0])
     # line = line / np.linalg.norm(line)
     # origin = line * 5 + vec([0, 0, 0])
-    origin = 2*vec([0, 2, .1])
-    camera = ray.Camera(origin, target=vec([0, 0, 0]), vfov=90, aspect=1)
+    #origin = 2*vec([0, 2, .1])
+    #camera = ray.Camera(origin, target=vec([0, 0, 0]), vfov=90, aspect=1)
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
