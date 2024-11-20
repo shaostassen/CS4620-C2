@@ -539,10 +539,10 @@ def LebronCrownExample():
         ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
         ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
         ray.Sphere(vec([0, -40, 0]), 39.5, gray),
-        ray.ShapeCSG(ray.Cone(vec([-5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-5, 1.8, 1]), 0.5, gold2), "union"),
-        ray.ShapeCSG(ray.Cone(vec([-2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([-2, 1.8, 1]), 0.5, gold2), "union"),
-        ray.ShapeCSG(ray.Cone(vec([2, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([2, 1.8, 1]), 0.5, gold2), "union"),
-        ray.ShapeCSG(ray.Cone(vec([5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold2), ray.Sphere(vec([5, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([-5, -2, 1]), vec([0, 1, 0]), 5, 0.5, gold2), ray.Sphere(vec([-5, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([-2, -2, 1]), vec([0, 1, 0]), 5, 0.5, gold2), ray.Sphere(vec([-2, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([2, -2, 1]), vec([0, 1, 0]), 5, 0.5, gold2), ray.Sphere(vec([2, 1.8, 1]), 0.5, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([5, -2, 1]), vec([0, 1, 0]), 5, 0.5, gold2), ray.Sphere(vec([5, 1.8, 1]), 0.5, gold2), "union"),
         
     ] ,bg_color=vec([0, 0, 0]),
     )
@@ -588,6 +588,24 @@ def ConeExample():
     scene = ray.Scene([
         ray.Cone(vec([0, 7, 0]), vec([0, -1, 0]), 4, 0.3, tan),
         #ray.Sphere(vec([0, -40, 0]), 39.5, gray),
+    ])
+
+    lights = [
+        ray.AmbientLight(0.8),
+    ]
+
+    camera = ray.Camera(vec([0, 0, 10]), target=vec([0, 5, 0]), vfov=60, aspect=16 / 9)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+def TrophyExample():
+    importlib.reload(ray)
+    tan = ray.Material(vec([0.7, 0.7, 0.4]), k_s=0.3, p=90, k_m=0.3)
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+    gray = ray.Material(vec([0.2, 0.2, 0.2]), k_m=0.4)
+    gold = ray.Material(vec([0.9, 0.9, 0.1]), k_m =0.6)
+
+    scene = ray.Scene([
+         ray.ShapeCSG(ray.Cone(vec([-5, -1, 1]), vec([0, 1, 0]), 3, 0.3, gold), ray.Sphere(vec([-5, 1.8, 1]), 0.5, gold), "union"),
     ])
 
     lights = [
