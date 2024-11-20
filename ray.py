@@ -1,7 +1,5 @@
 import numpy as np
-import cv2
-import json
-
+from PIL import Image
 from utils import *
 
 """
@@ -222,8 +220,13 @@ class SquareTexture:
     def __init__(self, vs, material, texture="lebron.png", reference_dir=np.array([-1, 0, 0])):
         self.vs = vs # (4, 3)
         self.material = Material(material.k_d, material.k_s, material.p, material.k_m, material.k_a, ("texture", self.query_texture))
-        self.texture = cv2.imread(texture)
-        self.texture = cv2.cvtColor(self.texture, cv2.COLOR_BGR2RGB)
+
+        # Load the texture
+        self.texture = Image.open(texture)
+        
+        # Convert to RGB
+        self.texture = self.texture.convert("RGB")
+        self.texture = np.array(self.texture)
 
         def reorder(points):
             edge1 = points[1] - points[0]
@@ -265,8 +268,23 @@ class SquareTexture:
             X[i][0] = cur_x[0]
             X[i][1] = cur_x[1]
 
+        def find_homography(world2, img2):
+            #Compute the homography matrix H using Direct Linear Transformation (DLT)
+            num_points = 4
+            A = []
+            for i in range(num_points):
+                X, Z = world2[i]
+                x, y = img2[i]
+                A.append([-X, -Z, -1, 0, 0, 0, x*X, x*Z, x])
+                A.append([0, 0, 0, -X, -Z, -1, y*X, y*Z, y])
+            A = np.array(A)
+            # Perform Singular Value Decomposition (SVD) to find the homography matrix H
+            U, S, V = np.linalg.svd(A)
+            H = V[-1].reshape(3, 3)
+            return H
+
         # Define the texture transformation matrix 2D
-        self.texture_transform = cv2.getPerspectiveTransform(X.astype(np.float32), np.array([[0, 0], [1, 0], [0, 1], [1, 1]]).astype(np.float32))
+        self.texture_transform = find_homography(X, np.array([[0, 0], [1, 0], [0, 1], [1, 1]]))
 
 
     def intersect(self, ray):
@@ -299,8 +317,11 @@ class SphereTexture:
     def __init__(self, center, radius, material, texture="basketball.png"):
         self.material = Material(material.k_d, material.k_s, material.p, material.k_m, material.k_a, ("texture", self.query_texture))
         self.sphere = Sphere(center, radius, self.material)
-        self.texture = cv2.imread(texture)
-        self.texture = cv2.cvtColor(self.texture, cv2.COLOR_BGR2RGB)
+
+        # Load the texture
+        self.texture = Image.open(texture)
+        self.texture = self.texture.convert("RGB")
+        self.texture = np.array(self.texture)
     def intersect(self, ray):
         # return self.sphere.intersect(ray)
         hit = self.sphere.intersect(ray)
@@ -312,15 +333,6 @@ class SphereTexture:
         phi = np.arccos(np.clip(uv[2] / self.sphere.radius, -1, 1))
         theta = np.arctan2(uv[1], uv[0])
         if theta < 0: theta += 2 * np.pi
-        
-        # Rotate thetas by 45 degrees
-        # theta += np.deg2rad(360-75)
-        # if theta > 2 * np.pi: theta -= 2 * np.pi
-        
-        # phi += np.deg2rad(90)
-        # if phi > np.pi: phi -= np.pi
-        
-        # theta += np.pi / 2
         
         # Compute the texture coordinates
         x = int(theta / (2 * np.pi) * self.texture.shape[1])
@@ -552,20 +564,6 @@ class Cylinder:
         normal = point - axis_projection
         return normal / np.linalg.norm(normal)   
     
-  # class Crown:
-  #   def __init__(self, c_h, c_r, ep, e_x, e_y, e_z, e_h):
-  #       self.c_h = c_h
-  #       self.c_r = c_r
-  #       self.ep = ep
-  #       self.e_x = e_x
-  #       self.e_y = e_y
-  #       self.e_z = e_z
-  #       self.e_h = e_h
-  #   def intersect(self, ray):
-
-
- # CSG operations
-
 class Cone:
     def __init__(self, apex, axis, height, angle, material):
         self.apex = np.array(apex, dtype=np.float64)
@@ -620,16 +618,6 @@ class Cone:
         # Compute the vector perpendicular to the axis
         normal = point - axis_projection
         return normal / np.linalg.norm(normal)
-    
-# class Trophy:
-    
-#     @staticmethod
-#     def work(self, mat, origin):
-#         surfs = []
-#         cy1 = Cylinder(origin, vec([0, 1, 0]), 0.5, 0.2, mat)
-#         origin[1] += 0.2 
-#         cy2 = Cylinder(origin, vec([0, 1, 0]), 0.3, 0.2, mat)
-
     
 class ShapeCSG:
     def __init__(self, obj1, obj2, operation):
@@ -967,23 +955,6 @@ def render_image(camera, scene, lights, nx, ny):
     (ny, nx, 3) float32 -- the RGB image
   """
   # TODO A4 implement this function
-  # output_image = np.zeros((ny, nx, 3), np.float32)
-  # for i in range(ny):
-  #   for j in range(nx):
-  #     x = (j + 0.5) / nx
-  #     y = (i + 0.5) / ny
-      
-  #     ray = camera.generate_ray((x, y))
-
-  #     # Step 1
-  #     # hit = scene.surfs[0].intersect(ray)
-  #     # if hit.first_t < np.inf: output_image[i, j] = np.array([1, 1, 1])
-
-  #     # Step 2-7
-  #     hit = scene.intersect(ray)
-  #     output_image[i, j] = shade(ray, hit, scene, lights).astype(np.float32)
-  # return output_image
-
   # Parallelize the rendering process
   pool = Pool()
   args = [(i, j, scene, lights, camera, nx, ny) for i in range(ny) for j in range(nx)]

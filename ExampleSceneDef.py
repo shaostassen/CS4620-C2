@@ -614,3 +614,142 @@ def TrophyExample():
 
     camera = ray.Camera(vec([0, 0, 10]), target=vec([0, 5, 0]), vfov=60, aspect=16 / 9)
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
+
+
+def FinalScene():
+    importlib.reload(ray)
+
+    theta = np.deg2rad(45)
+    rot_mat_45 = np.array([[np.cos(theta), -np.sin(theta), 0],
+                           [np.sin(theta), np.cos(theta), 0],
+                           [0, 0, 1]])
+    rot_mat_y = np.array([[np.cos(theta), 0, np.sin(theta)],
+                          [0, 1, 0],
+                          [-np.sin(theta), 0, np.cos(theta)]])
+    # rot_mat_y = rot_mat_y @ rot_mat_45
+    rot_mat_y = np.eye(3)
+
+    # color 
+    tan = ray.Material(vec([0.7, 0.7, 0.4]))
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+
+    # cylinder parameter
+    height = 0.4 
+    radius = 0.5 
+    ep = 0
+
+    # Ellipsoid parameter
+    x_1 = 0.07
+    y_1 = 0.25
+    z_1 = 0.07
+
+    e_height = 0.4 + 1.25
+    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=0.7, k_s=0.3)
+    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=0.7, k_s=0.3)
+    blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=0.7, k_s=0.3)
+    gold = ray.Material(vec([0.9, 0.9, 0.2]), k_m=0.3, k_s=0.9)
+    pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=0.7, k_s=0.3)
+    orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=0.7, k_s=0.3)
+    cyan = ray.Material(vec([0.1, 0.1, 0.7]))
+    gold2 = ray.Material(vec([1, 1, 0.1]), k_m=0.5, k_s=0.8)
+
+    gray = ray.Material(vec([0.1, 0.1, 0.1]), k_m=0.4, k_s=0.3, p=90, k_a=0.1)
+
+    base = 0.08
+    gem_height = 0.3
+    x = 0.5
+    y = 0
+    z = -0.5
+
+    offset = 0.6
+
+    e_height += 0.15
+    crown = ray.Cylinder(vec([0.5, 1.25+0.15, -0.5]), vec([0, 1, 0]), radius, height, gold)
+    jewel1 = ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue_1)
+    jewel2 = ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue_1)
+    jewel3 = ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x_1, y_1, z_1]), blue_1)
+    jewel4 = ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue_1)
+    jewel5 = ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x_1,  y_1, z_1]), blue_1)
+    jewel6 = ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue_1)
+    jewel7 = ray.Ellipsoid(vec([0.5, e_height-.2, -0.5+radius-ep]), vec([x_1,  .1, z_1]), blue_1)
+
+    jewel_combined = ray.ShapeCSG(jewel1, jewel2, "union")
+    jewel_combined = ray.ShapeCSG(jewel_combined, jewel3, "union")
+    jewel_combined = ray.ShapeCSG(jewel_combined, jewel4, "union")
+    jewel_combined = ray.ShapeCSG(jewel_combined, jewel5, "union")
+    jewel_combined = ray.ShapeCSG(jewel_combined, jewel6, "union")
+    # jewel_combined = ray.ShapeCSG(jewel_combined, jewel7, "union")
+    crown = ray.ShapeCSG(crown, jewel_combined, "union")
+    crown = ray.ShapeCSG(crown, jewel7, "subtraction")
+
+    # organize a cube
+    init_pos = vec([-.3, -3.2, -1.2])
+    scene = ray.Scene([
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+        ], tan, texture="lebron3.png", reference_dir=vec([0, 0, 1])),
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [1, 0, 0]),
+        #     vec(rot_mat_y @ [1, 0, -1]),
+        #     vec(rot_mat_y @ [1, 1, 0]),
+        #     vec(rot_mat_y @ [1, 1, -1]),
+        # ], tan, texture="lebron2.png", reference_dir=vec([1, 0, 0])),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron4.png", reference_dir=vec([0, 1, 0])),
+        # ray.SquareTexture([
+        #     vec(rot_mat_y @ [1, 0, -1]),
+        #     vec(rot_mat_y @ [0, 0, -1]),
+        #     vec(rot_mat_y @ [1, 1, -1]),
+        #     vec(rot_mat_y @ [0, 1, -1]),
+        # ], tan, texture="lebron4.png", reference_dir=vec([0, 0, -1])),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [0, 1, 0]),
+        ], tan, texture="lebron2.png", reference_dir=vec([-1, 0, 0])),
+        ray.SphereTexture(
+            vec([0.5, 0, 1.25]), 0.5, cyan, texture="basketball1.png"
+        ),
+        ray.SphereTexture(
+            vec([2, 1, 1]), 0.5, cyan, texture="world.png"
+        ),
+        ray.Torus(
+            vec([0.5, 0, -0.5]), 0.8, 0.1, tan, vec([np.pi/2,0,0])
+        ),
+        crown,
+        ray.Sphere(vec([0, -40, 0]), 39.5, gray),
+        ray.ShapeCSG(ray.Cone(init_pos, vec([0, 1, 0]), 3.3, 0.07, gold2), ray.Sphere(vec([init_pos[0], 0.3, init_pos[2]+0.05]), 0.25, gold2), "union"),
+        ray.ShapeCSG(ray.Cone(vec([1.3, -3, 0.35]), vec([0, 1, 0]), 3.3, 0.07, gold2), ray.Sphere(vec([1.3, 0.3, 0.35]), 0.25, gold2), "union"),
+        # gems
+        ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), blue_1),
+        ray.Ellipsoid(vec([x-1.5*offset, y, z+0.6]), vec([gem_height, base, base]), green),
+        ray.Ellipsoid(vec([x, y, z+1.0]), vec([gem_height, base, base]), blue_1),
+        ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
+        
+    ] ,bg_color=vec([0, 0, 0]),
+    )
+
+    lights = [
+        ray.AmbientLight(0.1),
+        ray.PointLight(vec([0.5, 5, -0.5]), 10*vec([.9, .9, .9])),
+        ray.PointLight(vec([0.5, 5, 5]), 30*vec([.9, .9, .2])),
+        ray.PointLight(vec([0.5, 0.5, -3]), 0.5*vec([10, 1, 1])),
+        ray.PointLight(vec([3, 0.5, -0.5]), 0.5*vec([10, 10, 1])),
+    ]
+    corner = vec([0, 1, 0])
+    target = vec([0.5, 0.25, -0.5])
+    corner_dir = corner - target
+    corner_dir = corner_dir / np.linalg.norm(corner_dir)
+    origin = corner_dir * 4 + target + vec([0, -0.95, 0])
+    
+    
+    camera = ray.Camera(eye=origin, target=target, vfov=60, aspect=16/9)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);

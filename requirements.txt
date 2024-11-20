@@ -1,9 +1,5 @@
 numpy
-taichi
 pillow
 requests
 matplotlib
-numba
-torch
-opencv-python
 pathos
