@@ -734,28 +734,28 @@ def render_image(camera, scene, lights, nx, ny):
     (ny, nx, 3) float32 -- the RGB image
   """
   # TODO A4 implement this function
-  # output_image = np.zeros((ny, nx, 3), np.float32)
-  # for i in range(ny):
-  #   for j in range(nx):
-  #     x = (j + 0.5) / nx
-  #     y = (i + 0.5) / ny
+  output_image = np.zeros((ny, nx, 3), np.float32)
+  for i in range(ny):
+    for j in range(nx):
+      x = (j + 0.5) / nx
+      y = (i + 0.5) / ny
       
-  #     ray = camera.generate_ray((x, y))
+      ray = camera.generate_ray((x, y))
 
-  #     # Step 1
-  #     # hit = scene.surfs[0].intersect(ray)
-  #     # if hit.t < np.inf: output_image[i, j] = np.array([1, 1, 1])
+      # Step 1
+      # hit = scene.surfs[0].intersect(ray)
+      # if hit.t < np.inf: output_image[i, j] = np.array([1, 1, 1])
 
-  #     # Step 2-7
-  #     hit = scene.intersect(ray)
-  #     output_image[i, j] = shade(ray, hit, scene, lights).astype(np.float32)
-  # return output_image
+      # Step 2-7
+      hit = scene.intersect(ray)
+      output_image[i, j] = shade(ray, hit, scene, lights).astype(np.float32)
+  return output_image
 
   # Parallelize the rendering process
-  pool = Pool()
-  args = [(i, j, scene, lights, camera, nx, ny) for i in range(ny) for j in range(nx)]
-  output_image = np.array(pool.starmap(trace_ray, args)).reshape(ny, nx, 3)
-  pool.close()
-  pool.join()
-  return output_image
+  # pool = Pool()
+  # args = [(i, j, scene, lights, camera, nx, ny) for i in range(ny) for j in range(nx)]
+  # output_image = np.array(pool.starmap(trace_ray, args)).reshape(ny, nx, 3)
+  # pool.close()
+  # pool.join()
+  # return output_image
 

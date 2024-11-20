@@ -399,9 +399,11 @@ def LebronCrownExample():
     red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=1)
     green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=1)
     blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=1)
-    gold = ray.Material(vec([0.9, 0.9, 0.5]), k_m=1)
+    gold = ray.Material(vec([0.9, 0.9, 0.2]), k_m=0.3)
     pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=1)
     orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=1)
+
+    gray = ray.Material(vec([0.2, 0.2, 0.2]), k_m=0.4)
 
     base = 0.08
     gem_height = 0.3
@@ -445,7 +447,7 @@ def LebronCrownExample():
         ], tan, texture="lebron5.png"),
         ray.Torus(
             vec([0.5, 0, -0.5]), 0.8, 0.1, tan, vec([np.pi/2,0,0])),
-        ray.Cylinder(vec([0.5, 1.25, -0.5]), vec([0, 1, 0]), radius, height, tan),
+        ray.Cylinder(vec([0.5, 1.25, -0.5]), vec([0, 1, 0]), radius, height, gold),
         ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
         ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
         ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x_1, y_1, z_1]), blue),
@@ -459,6 +461,7 @@ def LebronCrownExample():
         # ray.Ellipsoid(vec([x+offset, y, z+0.6]), vec([gem_height, base, base]), gold),
         ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
         ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
+        ray.Sphere(vec([0, -40, 0]), 39.5, gray),
         # ray.SquareTexture([
         #     vec(rot_mat_y @ [0, 0, 0]),
         #     vec(rot_mat_y @ [1, 0, 0]),
