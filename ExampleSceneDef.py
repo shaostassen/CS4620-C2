@@ -214,13 +214,52 @@ def EllipsoidExample():
 
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights)
 
+def CrownExample():
+    importlib.reload(ray)
+    
+    # color 
+    tan = ray.Material(vec([0.7, 0.7, 0.4]))
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+
+
+    # cylinder parameter
+    height = 0.4 
+    radius = 0.5 
+    ep = 0
+
+    # Ellipsoid parameter
+    x = 0.07
+    y = 0.25
+    z = 0.07
+
+    e_height = 0.9
+    # make the crown
+    scene = ray.Scene([
+        ray.Cylinder(vec([0.5, 0.5, -0.5]), vec([0, 1, 0]), radius, height, tan),
+        ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x, y, z]), blue),
+        ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x, y, z]), blue),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x, y, z]), blue),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5+radius-ep]), vec([x, y, z]), blue),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x, y, z]), blue),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x, y, z]), blue),
+        
+    ], bg_color=vec([0, 0, 0]),)
+
+    lights = [
+        ray.AmbientLight(1),
+    ]
+    origin = vec([0.5, 1.5, 2.5])
+    #origin = vec([0, 3, 2])
+    camera = ray.Camera(origin, target=vec([0.5, 0.5, -0.5]), vfov=60, aspect=1)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights)
+
 def CylinderExample():
     importlib.reload(ray)
 
     tan = ray.Material(vec([0.7, 0.7, 0.4]), k_s=0.3, p=90, k_m=0.3)
 
     scene = ray.Scene([
-        ray.Cyclinder(vec([2, 2, 2]), vec([0, 1, 0]), 0.75, 1.5, tan)
+        ray.Cylinder(vec([2, 2, 2]), vec([0, 1, 0]), 0.75, 1.5, tan)
     ])
     lights = [
         ray.PointLight(vec([15, 10, 5]), vec([500, 500, 500])),
@@ -230,6 +269,40 @@ def CylinderExample():
     camera = ray.Camera(vec([5, 5, 0]), target=vec([3.5, 0, 7]), vfov=90, aspect= 1)
 
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights)
+
+def GemExample():
+    importlib.reload(ray)
+    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=1)
+    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=1)
+    blue = ray.Material(vec([0.1, 0.1, 0.7]), k_m=1)
+    gold = ray.Material(vec([0.9, 0.9, 0.5]), k_m=1)
+    pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=1)
+    orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=1)
+
+    base = 0.08
+    gem_height = 0.3
+    x = 0.5
+    y = 0
+    z = -0.5
+
+    offset = 0.6
+
+    scene = ray.Scene([
+        ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), red),
+        ray.Ellipsoid(vec([x-1.5*offset, y, z-0.2]), vec([gem_height, base, base]), green),
+        ray.Ellipsoid(vec([x-offset, y, z]), vec([gem_height, base, base]), blue),
+        ray.Ellipsoid(vec([x+offset, y, z]), vec([gem_height, base, base]), gold),
+        ray.Ellipsoid(vec([x+1.5*offset, y, z-0.2]), vec([gem_height, base, base]), pink),
+        ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
+    ])
+
+    lights = [
+        ray.PointLight(vec([12, 10, 5]), vec([300, 300, 300])),
+        ray.AmbientLight(0.1),
+    ]
+    origin = vec([0.5, 1.5, 2.5])
+    camera = ray.Camera(origin, target=vec([0.5, 0.5, 0.5]), vfov=60, aspect=1)
+    return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
 
 def LebronJamesExample():
     importlib.reload(ray)
@@ -295,7 +368,6 @@ def LebronJamesExample():
 
 def LebronCrownExample():
     importlib.reload(ray)
-    tan = ray.Material(vec([0.7, 0.7, 0.4]))
 
     theta = np.deg2rad(45)
     rot_mat_45 = np.array([[np.cos(theta), -np.sin(theta), 0],
@@ -306,8 +378,87 @@ def LebronCrownExample():
                           [-np.sin(theta), 0, np.cos(theta)]])
     # rot_mat_y = rot_mat_y @ rot_mat_45
     rot_mat_y = np.eye(3)
+
+    # color 
+    tan = ray.Material(vec([0.7, 0.7, 0.4]))
+    blue = ray.Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
+
+
+    # cylinder parameter
+    height = 0.4 
+    radius = 0.5 
+    ep = 0
+
+    # Ellipsoid parameter
+    x_1 = 0.07
+    y_1 = 0.25
+    z_1 = 0.07
+
+    e_height = 0.4 + 1.25
+
+    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=1)
+    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=1)
+    blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=1)
+    gold = ray.Material(vec([0.9, 0.9, 0.5]), k_m=1)
+    pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=1)
+    orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=1)
+
+    base = 0.08
+    gem_height = 0.3
+    x = 0.5
+    y = 0
+    z = -0.5
+
+    offset = 0.6
+
     # organize a cube
     scene = ray.Scene([
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+        ], tan, texture="lebron.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron2.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron3.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+            vec(rot_mat_y @ [0, 1, -1]),
+        ], tan, texture="lebron4.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [0, 1, 0]),
+        ], tan, texture="lebron5.png"),
+        ray.Torus(
+            vec([0.5, 0, -0.5]), 0.8, 0.1, tan, vec([np.pi/2,0,0])),
+        ray.Cylinder(vec([0.5, 1.25, -0.5]), vec([0, 1, 0]), radius, height, tan),
+        ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x_1, y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x_1,  y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue),
+        # gems
+        ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), red),
+        ray.Ellipsoid(vec([x-1.5*offset, y, z+0.6]), vec([gem_height, base, base]), green),
+        ray.Ellipsoid(vec([x, y, z+1.0]), vec([gem_height, base, base]), blue_1),
+        # ray.Ellipsoid(vec([x+offset, y, z+0.6]), vec([gem_height, base, base]), gold),
+        ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
+        ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
         # ray.SquareTexture([
         #     vec(rot_mat_y @ [0, 0, 0]),
         #     vec(rot_mat_y @ [1, 0, 0]),
@@ -349,6 +500,9 @@ def LebronCrownExample():
 
     # camera = ray.Camera(vec([.5, .5, .75]), target=vec([0.5, 0.5, -0.5]), vfov=90, aspect=1)
     # Create line from center to the corner of the cube
+    origin = vec([0.5, 1.5, 2.5])
+    #origin = vec([0, 5, 0])
+    camera = ray.Camera(origin, target=vec([0.5, 0.5, -0.5]), vfov=60, aspect=1)
     # line = vec([0, 2, 0]) - vec([0, 0, 0])
     # line = line / np.linalg.norm(line)
     # origin = line * 5 + vec([0, 0, 0])
