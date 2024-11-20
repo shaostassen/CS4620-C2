@@ -20,7 +20,7 @@ this rule to keep things simple and efficient.)
 
 class Ray:
 
-    def __init__(self, origin, direction, start=0., end=np.inf):
+    def __init__(self, origin, direction, start=0., end=np.inf, n=1):
         """Create a ray with the given origin and direction.
 
         Parameters:
@@ -34,17 +34,19 @@ class Ray:
         self.direction = np.array(direction, np.float64)
         self.start = start
         self.end = end
+        self.n = n
     def serialize(self):
           return {
               "origin": self.origin.tolist(),
               "direction": self.direction.tolist(),
               "start": self.start,
               "end": self.end,
+              "n": self.n,
           }
 
 class Material:
 
-    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, flag=None):
+    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, flag=None, transparent=False, n =1):
         """Create a new material with the given parameters.
 
         Parameters:
@@ -65,6 +67,8 @@ class Material:
         else:
           self.flag = flag[0]
           self.query_texture = flag[1]
+        self.transparent = transparent
+        self.n = n
 
     def serialize(self):
       return {
@@ -74,6 +78,8 @@ class Material:
           "k_m": self.k_m.tolist() if isinstance(self.k_m, np.ndarray) else self.k_m,
           "k_a": self.k_a.tolist(),
           "flag": self.flag,
+          "transparent": self.transparent,
+          "n": self.n,
       }
 
 
@@ -89,16 +95,14 @@ class Hit:
           material : (Material) -- the material of the surface
         """
         self.t = t
+        self.first_t = t
+        self.second_t = t
+        # self.first_t = None
+        # self.second_t = None
         self.point = point
+
         self.normal = normal
         self.material = material
-    def serialize(self):
-        return {
-            "t": self.t,
-            "point": None if self.point is None else self.point.tolist(),
-            "normal": None if self.normal is None else self.normal.tolist(),
-            "material": None if self.material is None else self.material.serialize(),
-        }
 
 # Value to represent absence of an intersection
 no_hit = Hit(np.inf)
@@ -147,7 +151,12 @@ class Sphere:
       if ray.start < t < ray.end:
           point = ray.origin + t*ray.direction
           normal = (point - self.center) / self.radius
-          return Hit(t, point, normal, self.material)
+          hit = Hit(t, point, normal, self.material)
+          hit.first_t = pos_t
+          hit.second_t = neg_t
+
+          # return Hit(t, point, normal, self.material)
+          return hit
       return no_hit
     
     def serialize(self):
@@ -480,8 +489,91 @@ class Cylinder:
         # Compute the vector perpendicular to the axis
         normal = point - axis_projection
         return normal / np.linalg.norm(normal)   
+    
+  # class Crown:
+  #   def __init__(self, c_h, c_r, ep, e_x, e_y, e_z, e_h):
+  #       self.c_h = c_h
+  #       self.c_r = c_r
+  #       self.ep = ep
+  #       self.e_x = e_x
+  #       self.e_y = e_y
+  #       self.e_z = e_z
+  #       self.e_h = e_h
+  #   def intersect(self, ray):
+
+
+ # CSG operations
+
+class ShapeBoolean:
+    def __init__(self, obj1, obj2, operation):
+        self.obj1 = obj1
+        self.obj2 = obj2
+        self.operation = operation
+
+    def intersect(self, ray):
+        if self.operation == "union":
+            return self.union(ray)
+        elif self.operation == "intersection":
+            return self.intersection(ray)
+        elif self.operation == "difference":
+            return self.difference(ray)
+      
+    def get_intersection_point(self, t, ray):
+        return ray.origin + t * ray.direction
+  
+    def get_hit_normal(self, t, hit1, hit2):
+        # if np.any(t == hit1.first_t) or np.any(t == hit1.second_t):
+        #     return hit1.normal
+        # elif np.any(t == hit2.first_t) or np.any(t == hit2.second_t):
+        #     return hit2.normal
+        if t == hit1.first_t or t == hit1.second_t:
+            return hit1.normal
+        elif t == hit2.first_t or t == hit2.second_t:
+            return hit2.normal
         
+    def union(self, ray):
+        # print("union")
+        hit1 = self.obj1.intersect(ray)
+        hit2 = self.obj2.intersect(ray)
+
+        min_hit1_t = min(hit1.first_t, hit1.second_t)
+        min_hit2_t = min(hit2.first_t, hit2.second_t)
+
+        return hit1 if min_hit1_t < min_hit2_t else hit2
+    
+    def intersection(self, ray):
+        hit1 = self.obj1.intersect(ray)
+        hit2 = self.obj2.intersect(ray)
         
+        first_t = max(min(hit1.first_t, hit1.second_t), min(hit2.first_t, hit2.second_t))
+        second_t = min(max(hit1.first_t, hit1.second_t), max(hit2.first_t, hit2.second_t))
+
+        point = self.get_intersection_point(first_t, ray)
+        normal = self.get_hit_normal(first_t, hit1, hit2)
+        return (first_t, first_t, second_t, point, normal, self.material)
+    
+    def difference(self, ray):
+        hit1 = self.obj1.intersect(ray)
+        hit2 = self.obj2.intersect(ray)
+        if hit2.first_t < hit1.first_t and hit1.second_t < hit2.second_t:
+            return no_hit
+        elif hit2.first_t > hit1.second_t or hit2.second_t < hit1.first_t:
+            return hit1
+        elif hit1.first_t < hit2.first_t and hit2.first_t < hit1.second_t:
+            point = self.get_intersection_point(hit2.first_t, ray)
+            normal = self.get_hit_normal(hit2.first_t, hit1, hit2)
+            return Hit(first_t=hit1.first_t, second_t=hit2.first_t, point=point, normal=normal, material=self.material)
+
+        elif hit1.first_t < hit2.second_t and hit2.second_t < hit1.second_t:
+            point = self.get_intersection_point(hit2.second_t, ray)
+            normal = self.get_hit_normal(hit2.second_t, hit1, hit2)
+            return Hit(hit2.second_t, hit1.second_t, point, normal, self.material)
+        
+        else: 
+            return no_hit
+
+
+
 class Camera:
 
     def __init__(self, eye=vec([0,0,0]), target=vec([0,0,-1]), up=vec([0,1,0]), 
@@ -712,6 +804,7 @@ def shade(ray, hit, scene, lights, depth=0):
 
     return np.clip(total_light, 0, 1, dtype=np.float64)
 
+
 # Define function so we can run in parallel
 def trace_ray(i, j, scene, lights, camera, nx, ny, depth=MAX_DEPTH):
     x = (j + 0.5) / nx
@@ -744,7 +837,7 @@ def render_image(camera, scene, lights, nx, ny):
 
   #     # Step 1
   #     # hit = scene.surfs[0].intersect(ray)
-  #     # if hit.t < np.inf: output_image[i, j] = np.array([1, 1, 1])
+  #     # if hit.first_t < np.inf: output_image[i, j] = np.array([1, 1, 1])
 
   #     # Step 2-7
   #     hit = scene.intersect(ray)
