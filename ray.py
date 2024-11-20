@@ -549,6 +549,72 @@ class Cylinder:
 
  # CSG operations
 
+class Cone:
+    def __init__(self, apex, axis, height, angle, material):
+        self.apex = np.array(apex, dtype=np.float64)
+        self.axis = np.array(axis) / np.linalg.norm(axis)
+        self.height = height
+        self.angle = angle
+        self.cos2_angle = np.cos(angle) ** 2 
+        self.material = material
+
+    def intersect(self, ray):
+        ray_direction = np.array(ray.direction) / np.linalg.norm(ray.direction)
+        v = self.axis
+        co = ray.origin - self.apex
+        
+        # Quadratic coefficients
+        a = np.dot(ray_direction, v)**2 - self.cos2_angle
+        b = 2 * (np.dot(ray_direction, v) * np.dot(co, v) - np.dot(ray_direction, co) * self.cos2_angle)
+        c = np.dot(co, v)**2 - np.dot(co, co) * self.cos2_angle
+        
+        # Solve the quadratic equation at^2 + bt + c = 0
+        discriminant = b**2 - 4 * a * c
+        if discriminant < 0:
+            return no_hit  # No intersection
+        
+        # Compute the roots
+        t1 = (-b - np.sqrt(discriminant)) / (2 * a)
+        t2 = (-b + np.sqrt(discriminant)) / (2 * a)
+        
+        # Validate the intersection points
+        t_min = min(t1,t2)
+        if t_min > 0:
+            intersection = ray.origin + t_min * ray.direction
+            height_check = np.dot(intersection - self.apex, v)
+            if 0 <= height_check <= self.height:
+                normal = self.compute_normal(intersection)
+                return Hit(t_min, intersection, normal, self.material)
+        
+        return no_hit  # No valid intersection
+    
+    def compute_normal(self, point):
+        """
+        Compute the surface normal at a given point on the cone.
+        Args:
+            point (array-like): The point on the cone's surface.
+        Returns:
+            array: Normalized normal vector.
+        """
+        # Project the point onto the cone axis
+        to_point = point - self.apex
+        projection_length = np.dot(to_point, self.axis)
+        axis_projection = self.apex + projection_length * self.axis
+        # Compute the vector perpendicular to the axis
+        normal = point - axis_projection
+        return normal / np.linalg.norm(normal)
+    
+# class Trophy:
+    
+#     @staticmethod
+#     def work(self, mat, origin):
+#         surfs = []
+#         cy1 = Cylinder(origin, vec([0, 1, 0]), 0.5, 0.2, mat)
+#         origin[1] += 0.2 
+#         cy2 = Cylinder(origin, vec([0, 1, 0]), 0.3, 0.2, mat)
+
+    
+
 class ShapeBoolean:
     def __init__(self, obj1, obj2, operation):
         self.obj1 = obj1
@@ -690,7 +756,6 @@ class Camera:
             "aspect": self.aspect,
         }
 
-
 class PointLight:
 
     def __init__(self, position, intensity):
@@ -741,7 +806,6 @@ class PointLight:
             "position": self.position.tolist(),
             "intensity": self.intensity.tolist() if isinstance(self.intensity, np.ndarray) else self.intensity,
         }
-
 class AmbientLight:
 
     def __init__(self, intensity):
