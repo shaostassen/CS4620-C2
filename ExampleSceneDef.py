@@ -439,17 +439,15 @@ def LebronCrownExample():
     z_1 = 0.07
 
     e_height = 0.4 + 1.25
+    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=0.7, k_s=0.3)
+    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=0.7, k_s=0.3)
+    blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=0.7, k_s=0.3)
+    gold = ray.Material(vec([0.9, 0.9, 0.2]), k_m=0.3, k_s=0.9)
+    pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=0.7, k_s=0.3)
+    orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=0.7, k_s=0.3)
+    cyan = ray.Material(vec([0.1, 0.1, 0.7]))
 
-    glass = ray.Material(vec([0, 0, 0]), k_m=0.4, k_a=0, k_s=0, transparent=True, n=1.1)
-
-    red = ray.Material(vec([0.7, 0.1, 0.1]), k_m=1)
-    green = ray.Material(vec([0.1, 0.7, 0.1]), k_m=1)
-    blue_1 = ray.Material(vec([0.1, 0.1, 0.7]), k_m=1)
-    gold = ray.Material(vec([0.9, 0.9, 0.2]), k_m=0.3)
-    pink = ray.Material(vec([0.9, 0.5, 0.9]), k_m=1)
-    orange = ray.Material(vec([0.9, 0.5, 0.1]), k_m=1)
-
-    gray = ray.Material(vec([0.2, 0.2, 0.2]), k_m=0.4)
+    gray = ray.Material(vec([0.1, 0.1, 0.1]), k_m=0.4, k_s=0.3, p=90, k_a=0.1)
 
     base = 0.08
     gem_height = 0.3
@@ -466,40 +464,43 @@ def LebronCrownExample():
             vec(rot_mat_y @ [1, 0, 0]),
             vec(rot_mat_y @ [0, 1, 0]),
             vec(rot_mat_y @ [1, 1, 0]),
-        ], tan, texture="lebron.png"),
+        ], tan, texture="lebron.png", reference_dir=vec([0, 0, 1])),
         ray.SquareTexture([
             vec(rot_mat_y @ [1, 0, 0]),
             vec(rot_mat_y @ [1, 0, -1]),
             vec(rot_mat_y @ [1, 1, 0]),
             vec(rot_mat_y @ [1, 1, -1]),
-        ], tan, texture="lebron2.png"),
+        ], tan, texture="lebron2.png", reference_dir=vec([1, 0, 0])),
         ray.SquareTexture([
             vec(rot_mat_y @ [0, 1, 0]),
             vec(rot_mat_y @ [1, 1, 0]),
             vec(rot_mat_y @ [0, 1, -1]),
             vec(rot_mat_y @ [1, 1, -1]),
-        ], tan, texture="lebron3.png"),
+        ], tan, texture="lebron3.png", reference_dir=vec([0, 1, 0])),
         ray.SquareTexture([
             vec(rot_mat_y @ [1, 0, -1]),
             vec(rot_mat_y @ [0, 0, -1]),
             vec(rot_mat_y @ [1, 1, -1]),
             vec(rot_mat_y @ [0, 1, -1]),
-        ], tan, texture="lebron4.png"),
+        ], tan, texture="lebron4.png", reference_dir=vec([0, 0, -1])),
         ray.SquareTexture([
             vec(rot_mat_y @ [0, 0, -1]),
             vec(rot_mat_y @ [0, 0, 0]),
             vec(rot_mat_y @ [0, 1, -1]),
             vec(rot_mat_y @ [0, 1, 0]),
-        ], tan, texture="lebron5.png"),
+        ], tan, texture="lebron5.png", reference_dir=vec([-1, 0, 0])),
+        ray.SphereTexture(
+            vec([0.5, 0, 1.25]), 0.5, cyan, texture="basketball1.png"
+        ),
         ray.Torus(
             vec([0.5, 0, -0.5]), 0.8, 0.1, tan, vec([np.pi/2,0,0])),
         ray.Cylinder(vec([0.5, 1.25, -0.5]), vec([0, 1, 0]), radius, height, gold),
-        ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
-        ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue),
-        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x_1, y_1, z_1]), blue),
-        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue),
-        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x_1,  y_1, z_1]), blue),
-        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue),
+        ray.Ellipsoid(vec([0.5+radius-ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue_1),
+        ray.Ellipsoid(vec([0.5-radius+ep, e_height, -0.5]), vec([x_1, y_1, z_1]), blue_1),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5-radius-ep]), vec([x_1, y_1, z_1]), blue_1),
+        ray.Ellipsoid(vec([0.5+radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue_1),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5-radius-ep]), vec([x_1,  y_1, z_1]), blue_1),
+        ray.Ellipsoid(vec([0.5-radius/2, e_height, -0.5+radius-ep]), vec([x_1,  y_1, z_1]), blue_1),
         # gems
         ray.Ellipsoid(vec([x-2.5*offset, y, z]), vec([gem_height, base, base]), glass),
         ray.Ellipsoid(vec([x-1.5*offset, y, z+0.6]), vec([gem_height, base, base]), green),
@@ -508,53 +509,37 @@ def LebronCrownExample():
         ray.Ellipsoid(vec([x+1.5*offset, y, z+0.6]), vec([gem_height, base, base]), pink),
         ray.Ellipsoid(vec([x+2.5*offset, y, z]), vec([gem_height, base, base]), orange),
         ray.Sphere(vec([0, -40, 0]), 39.5, gray),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [0, 0, 0]),
-        #     vec(rot_mat_y @ [1, 0, 0]),
-        #     vec(rot_mat_y @ [0, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        # ], tan, texture="lebron.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [1, 0, 0]),
-        #     vec(rot_mat_y @ [1, 0, -1]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        # ], tan, texture="lebron2.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [0, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        #     vec(rot_mat_y @ [0, 1, -1]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        # ], tan, texture="lebron3.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [1, 0, -1]),
-        #     vec(rot_mat_y @ [0, 0, -1]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        #     vec(rot_mat_y @ [0, 1, -1]),
-        # ], tan, texture="lebron4.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [0, 0, -1]),
-        #     vec(rot_mat_y @ [0, 0, 0]),
-        #     vec(rot_mat_y @ [0, 1, -1]),
-        #     vec(rot_mat_y @ [0, 1, 0]),
-        # ], tan, texture="lebron5.png"),
-        #ray.Cylinder(vec([0.5, 0.5, -0.5]), vec([0, 1, 0]), 0.1, 0.3, tan)
     ] ,bg_color=vec([0, 0, 0]),
     )
 
     lights = [
-        #ray.AmbientLight(1),
-        ray.PointLight(vec([-0.5, 1.5, -1.5]), vec([10, 10, 10])),
+        ray.AmbientLight(.1),
+        ray.PointLight(vec([0.5, 5, -0.5]), 10*vec([.9, .9, .9])),
+        ray.PointLight(vec([0.5, 5, 5]), 30*vec([.9, .9, .2])),
+        # Add red back light
+        ray.PointLight(vec([0.5, 0.5, -3]), 0.5*vec([10, 1, 1])),
+        # Add gold back light right
+        ray.PointLight(vec([3, 0.5, -0.5]), 0.5*vec([10, 10, 1])),
+        # Add green back light left
+        # ray.PointLight(vec([-2, 0.5, -0.5]), 0.2*vec([1, 10, 1])),
     ]
 
     # camera = ray.Camera(vec([.5, .5, .75]), target=vec([0.5, 0.5, -0.5]), vfov=90, aspect=1)
     # Create line from center to the corner of the cube
     origin = vec([0.5, 1.5, 2.5])
     #origin = vec([0, 5, 0])
-    camera = ray.Camera(origin, target=vec([0.5, 0.5, -0.5]), vfov=60, aspect=1)
     # line = vec([0, 2, 0]) - vec([0, 0, 0])
     # line = line / np.linalg.norm(line)
     # origin = line * 5 + vec([0, 0, 0])
     #origin = 2*vec([0, 2, .1])
     #camera = ray.Camera(origin, target=vec([0, 0, 0]), vfov=90, aspect=1)
+    
+    corner = vec([0, 1, 0])
+    target = vec([0.5, 0.25, -0.5])
+    corner_dir = corner - target
+    corner_dir = corner_dir / np.linalg.norm(corner_dir)
+    origin = corner_dir * 4 + target + vec([0, -0.95, 0])
+    
+    
+    camera = ray.Camera(eye=origin, target=target, vfov=60, aspect=16/9)
     return ExampleSceneDef(camera=camera, scene=scene, lights=lights);
