@@ -431,7 +431,7 @@ class Torus:
         world_intersection = euler_angles @ hit_point + self.center
         return Hit(closest, world_intersection, world_normal, self.material)
     
-class Cyclinder: 
+class Cylinder: 
     def __init__(self, base, axis, radius, height, material):
         """
         Initialize a cylinder for ray tracing.
