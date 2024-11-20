@@ -250,30 +250,30 @@ def LebronJamesExample():
     rot_mat_y = np.eye(3)
     # organize a cube
     scene = ray.Scene([
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [0, 0, 0]),
-        #     vec(rot_mat_y @ [1, 0, 0]),
-        #     vec(rot_mat_y @ [0, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        # ], tan, texture="lebron.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [1, 0, 0]),
-        #     vec(rot_mat_y @ [1, 0, -1]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        # ], tan, texture="lebron2.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [0, 1, 0]),
-        #     vec(rot_mat_y @ [1, 1, 0]),
-        #     vec(rot_mat_y @ [0, 1, -1]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        # ], tan, texture="lebron3.png"),
-        # ray.SquareTexture([
-        #     vec(rot_mat_y @ [1, 0, -1]),
-        #     vec(rot_mat_y @ [0, 0, -1]),
-        #     vec(rot_mat_y @ [1, 1, -1]),
-        #     vec(rot_mat_y @ [0, 1, -1]),
-        # ], tan, texture="lebron4.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 0, 0]),
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+        ], tan, texture="lebron.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, 0]),
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron2.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [0, 1, 0]),
+            vec(rot_mat_y @ [1, 1, 0]),
+            vec(rot_mat_y @ [0, 1, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+        ], tan, texture="lebron3.png"),
+        ray.SquareTexture([
+            vec(rot_mat_y @ [1, 0, -1]),
+            vec(rot_mat_y @ [0, 0, -1]),
+            vec(rot_mat_y @ [1, 1, -1]),
+            vec(rot_mat_y @ [0, 1, -1]),
+        ], tan, texture="lebron4.png"),
         ray.SquareTexture([
             vec(rot_mat_y @ [0, 0, -1]),
             vec(rot_mat_y @ [0, 0, 0]),
