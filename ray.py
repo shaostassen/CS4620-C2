@@ -95,8 +95,6 @@ class Hit:
         self.t = t
         self.first_t = t
         self.second_t = t
-        # self.first_t = None
-        # self.second_t = None
         self.point = point
 
         self.normal = normal
