@@ -1,4 +1,6 @@
 import numpy as np
+import cv2
+import json
 
 from utils import *
 
@@ -32,11 +34,17 @@ class Ray:
         self.direction = np.array(direction, np.float64)
         self.start = start
         self.end = end
-
+    def serialize(self):
+          return {
+              "origin": self.origin.tolist(),
+              "direction": self.direction.tolist(),
+              "start": self.start,
+              "end": self.end,
+          }
 
 class Material:
 
-    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None):
+    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, flag=None):
         """Create a new material with the given parameters.
 
         Parameters:
@@ -51,6 +59,22 @@ class Material:
         self.p = p
         self.k_m = k_m
         self.k_a = k_a if k_a is not None else k_d
+        if flag is None:
+            self.flag = None
+            self.query_texture = None
+        else:
+          self.flag = flag[0]
+          self.query_texture = flag[1]
+
+    def serialize(self):
+      return {
+          "k_d": self.k_d.tolist(),
+          "k_s": self.k_s.tolist() if isinstance(self.k_s, np.ndarray) else self.k_s,
+          "p": self.p,
+          "k_m": self.k_m.tolist() if isinstance(self.k_m, np.ndarray) else self.k_m,
+          "k_a": self.k_a.tolist(),
+          "flag": self.flag,
+      }
 
 
 class Hit:
@@ -68,6 +92,13 @@ class Hit:
         self.point = point
         self.normal = normal
         self.material = material
+    def serialize(self):
+        return {
+            "t": self.t,
+            "point": None if self.point is None else self.point.tolist(),
+            "normal": None if self.normal is None else self.normal.tolist(),
+            "material": None if self.material is None else self.material.serialize(),
+        }
 
 # Value to represent absence of an intersection
 no_hit = Hit(np.inf)
@@ -162,6 +193,13 @@ class RubiksCube:
             if t > ray.start and t < ray.end:
                 hit_point = ray.origin + t * ray.direction
                 normal = normalize(np.cross(e1, e2))
+    
+    def serialize(self):
+        return {
+            "center": self.center.tolist(),
+            "radius": self.radius,
+            "material": self.material.serialize(),
+        }
 
 class Triangle:
 
@@ -440,6 +478,100 @@ class Cyclinder:
         
 
         
+    def serialize(self):
+        return {
+            "vs": self.vs.tolist(),
+            "material": self.material.serialize(),
+        }
+    
+
+class SquareTexture:
+    def __init__(self, vs, material, texture="lebron.png"):
+        self.vs = vs # (4, 3)
+        self.material = Material(material.k_d, material.k_s, material.p, material.k_m, material.k_a, ("texture", self.query_texture))
+        self.texture = cv2.imread(texture)
+        self.texture = cv2.cvtColor(self.texture, cv2.COLOR_BGR2RGB)
+
+        self.triangle1 = Triangle([vs[0], vs[1], vs[2]], material)
+        self.triangle2 = Triangle([vs[1], vs[2], vs[3]], material)
+
+        # Define plan for texture transformation
+        line1 = vs[1] - vs[0]
+        line2 = vs[2] - vs[0]
+        # print(line1, line2)
+        # Characterize the corners using basis vectors
+        self.u = line1 / np.linalg.norm(line1)
+        self.v = line2 / np.linalg.norm(line2)
+
+        # self.u = np.mean([self.u, self.v], axis=0)
+        # self.u /= np.linalg.norm(self.u)
+        # self.u = line1 / np.linalg.norm(line1)
+        # self.v = line2 - np.dot(line2, self.u) * self.u  # Remove projection of line2 onto u
+        # self.v /= np.linalg.norm(self.v)  # Normalize
+
+        # cross_product = np.cross(line1, line2)
+        # if np.linalg.norm(cross_product) < 1e-6:
+        #     # raise ValueError("Vectors line1 and line2 are collinear, cannot construct basis.")
+        #     print("Vectors line1 and line2 are collinear, cannot construct basis.")
+
+
+        
+        # Solve au + bv - v[i] = 0 for i = 0, 1, 2, 3
+        X = np.zeros((4,2))
+        # self.A = np.array([[self.u[0], self.v[0]], [self.u[1], self.v[1]]])
+        self.A = np.array([
+            [self.u[0], self.v[0], vs[0][0]],
+            [self.u[1], self.v[1], vs[0][1]],
+            [self.u[2], self.v[2], vs[0][2]],
+        ])
+        # Add some epsilon to avoid singular matrix
+        print(np.linalg.det(self.A))
+        print(self.A)
+        # self.A += 1e-6 * np.eye(3)
+        for i in range(4):
+            # B = np.array([vs[i][0], vs[i][1]])
+            # B -= np.array([vs[0][0], vs[0][1]])
+            # B = np.array([vs[i][0] - vs[0][0], vs[i][1] - vs[0][1]])
+            B = np.array([vs[i][0], vs[i][1], vs[0][2]])
+            cur_x = np.linalg.solve(self.A, B)
+            X[i][0] = cur_x[0]
+            X[i][1] = cur_x[1]
+
+        # Define the texture transformation matrix 2D
+        self.texture_transform = cv2.getPerspectiveTransform(X.astype(np.float32), np.array([[0, 0], [1, 0], [0, 1], [1, 1]]).astype(np.float32))
+
+
+    def intersect(self, ray):
+        hit1 = self.triangle1.intersect(ray)
+        hit2 = self.triangle2.intersect(ray)
+        if hit1.t == np.inf and hit2.t == np.inf: return no_hit
+
+        real_hit = hit1 if hit1.t < hit2.t else hit2
+        return Hit(real_hit.t, real_hit.point, real_hit.normal, self.material)
+    def query_texture(self, uv):
+        # uv = (3,)
+        # x = int(uv[0] * self.texture.shape[1])
+        # y = int(uv[1] * self.texture.shape[0])
+        # y = self.texture.shape[0] - y - 1
+        # return self.texture[y, x]
+
+        # Characterize uv using basis vectors
+        B = np.array([uv[0], uv[1], uv[2]])
+        X = np.linalg.solve(self.A, B)
+        y, x = X[1], X[0]
+        x = int(x * self.texture.shape[1])
+        y = int(y * self.texture.shape[0])
+        y = self.texture.shape[0] - y - 1
+
+        y, x = np.clip([y, x], 0, self.texture.shape[0] - 1)
+        return self.texture[y, x]
+        # return self.material.k_d
+    def serialize(self):
+        return {
+            "vs": self.vs.tolist(),
+            "material": self.material.serialize(),
+            "texture": "embedded",  # Assuming the texture will be encoded separately
+        }
 
 class Camera:
 
@@ -503,6 +635,14 @@ class Camera:
         camera_coords = np.array([image_plane_coords[0], image_plane_coords[1], -self.f, 0], dtype=np.float64)
         direction_homo = self.M @ camera_coords
         return Ray(self.eye, direction_homo[:3])
+    def serialize(self):
+        return {
+            "eye": self.eye.tolist(),
+            "target": self.target.tolist(),
+            "up": self.up.tolist(),
+            "vfov": self.vfov,
+            "aspect": self.aspect,
+        }
 
 
 class PointLight:
@@ -547,7 +687,11 @@ class PointLight:
         specular_factor = np.dot(hit.normal, bisector) ** hit.material.p
 
         return self.intensity * fallout_factor * skidding_factor * (hit.material.k_d + hit.material.k_s * specular_factor)
-    
+    def serialize(self):
+        return {
+            "position": self.position.tolist(),
+            "intensity": self.intensity.tolist() if isinstance(self.intensity, np.ndarray) else self.intensity,
+        }
 
 class AmbientLight:
 
@@ -570,7 +714,17 @@ class AmbientLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
+        # return self.intensity * hit.material.k_a
+        # print("here")
+        if hit.material.flag == "texture":
+            uv = hit.point
+            texture_color = hit.material.query_texture(uv)
+            return texture_color / 255 * self.intensity
         return self.intensity * hit.material.k_a
+    def serialize(self):
+        return {
+            "intensity": self.intensity.tolist() if isinstance(self.intensity, np.ndarray) else self.intensity,
+        }
 
 
 class Scene:
@@ -604,6 +758,11 @@ class Scene:
                 first_hit = hit
 
         return first_hit
+    def serialize(self):
+        return {
+            "surfs": [surf.serialize() for surf in self.surfs],
+            "bg_color": self.bg_color.tolist(),
+        }
 
 
 MAX_DEPTH = 4
@@ -641,6 +800,7 @@ def shade(ray, hit, scene, lights, depth=0):
 
     return np.clip(total_light, 0, 1, dtype=np.float64)
 
+# Define function so we can run in parallel
 def trace_ray(i, j, scene, lights, camera, nx, ny, depth=MAX_DEPTH):
     x = (j + 0.5) / nx
     y = (i + 0.5) / ny
@@ -650,6 +810,8 @@ def trace_ray(i, j, scene, lights, camera, nx, ny, depth=MAX_DEPTH):
 
 from pathos.multiprocessing import Pool
 
+# import multiprocessing
+from pathos.multiprocessing import Pool
 def render_image(camera, scene, lights, nx, ny):
   """Render a ray traced image.
 

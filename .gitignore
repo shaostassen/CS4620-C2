@@ -12,3 +12,6 @@ __pycache__/ExampleSceneDef.cpython-39.pyc
 __pycache__/ImLite.cpython-39.pyc
 __pycache__/ray.cpython-39.pyc
 __pycache__/utils.cpython-39.pyc
+venv
+__pycache__
+
