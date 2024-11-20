@@ -210,59 +210,48 @@ class Triangle:
     
 
 class SquareTexture:
-    def __init__(self, vs, material, texture="lebron.png"):
+    def __init__(self, vs, material, texture="lebron.png", reference_dir=np.array([-1, 0, 0])):
         self.vs = vs # (4, 3)
         self.material = Material(material.k_d, material.k_s, material.p, material.k_m, material.k_a, ("texture", self.query_texture))
         self.texture = cv2.imread(texture)
         self.texture = cv2.cvtColor(self.texture, cv2.COLOR_BGR2RGB)
 
-        self.triangle1 = Triangle([vs[0], vs[1], vs[2]], material)
-        self.triangle2 = Triangle([vs[1], vs[2], vs[3]], material)
-
+        def reorder(points):
+            edge1 = points[1] - points[0]
+            edge2 = points[2] - points[0]
+            
+            # Compute the normal vector
+            normal = np.cross(edge1, edge2)
+            
+            # Check the alignment of the normal with the reference direction
+            alignment = np.dot(normal, reference_dir)
+            
+            # If the normal points in the opposite direction, swap v1 and v2
+            if alignment < 0: return [points[0], points[2], points[1]]
+            return [points[0], points[1], points[2]]
+        
+        # Reorder the vertices to be in CCW order
+        self.triangle1 = Triangle(reorder(vs[:3]), material)
+        self.triangle2 = Triangle(reorder([vs[1], vs[2], vs[3]]), material)
+        
         # Define plan for texture transformation
         line1 = vs[1] - vs[0]
         line2 = vs[2] - vs[0]
-        # print(line1, line2)
+        
         # Characterize the corners using basis vectors
         self.u = line1 / np.linalg.norm(line1)
         self.v = line2 / np.linalg.norm(line2)
 
-        # self.u = np.mean([self.u, self.v], axis=0)
-        # self.u /= np.linalg.norm(self.u)
-        # self.u = line1 / np.linalg.norm(line1)
-        # self.v = line2 - np.dot(line2, self.u) * self.u  # Remove projection of line2 onto u
-        # self.v /= np.linalg.norm(self.v)  # Normalize
-
-        # cross_product = np.cross(line1, line2)
-        # if np.linalg.norm(cross_product) < 1e-6:
-        #     # raise ValueError("Vectors line1 and line2 are collinear, cannot construct basis.")
-        #     print("Vectors line1 and line2 are collinear, cannot construct basis.")
-
-
-        
         # Solve au + bv - v[i] = 0 for i = 0, 1, 2, 3
         X = np.zeros((4,2))
-        # self.A = np.array([[self.u[0], self.v[0]], [self.u[1], self.v[1]]])
-        # self.A = np.array([
-        #     [self.u[0], self.v[0], vs[0][0]],
-        #     [self.u[1], self.v[1], vs[0][1]],
-        #     [self.u[2], self.v[2], vs[0][2]],
-        # ])
         self.A = np.array([
             [self.u[0], self.v[0]],
             [self.u[1], self.v[1]],
             [self.u[2], self.v[2]],
         ])
         # Add some epsilon to avoid singular matrix
-        # print(np.linalg.det(self.A))
-        # print(self.A)
-        # self.A += 1e-6 * np.eye(3)
         for i in range(4):
-            # B = np.array([vs[i][0], vs[i][1]])
-            # B -= np.array([vs[0][0], vs[0][1]])
-            # B = np.array([vs[i][0] - vs[0][0], vs[i][1] - vs[0][1]])
             B = np.array([vs[i][0], vs[i][1], vs[0][2]]) - np.array([vs[0][0], vs[0][1], vs[0][2]])
-            # cur_x = np.linalg.solve(self.A, B)
             cur_x = np.linalg.lstsq(self.A, B, rcond=None)[0]
             X[i][0] = cur_x[0]
             X[i][1] = cur_x[1]
@@ -279,12 +268,6 @@ class SquareTexture:
         real_hit = hit1 if hit1.t < hit2.t else hit2
         return Hit(real_hit.t, real_hit.point, real_hit.normal, self.material)
     def query_texture(self, uv):
-        # uv = (3,)
-        # x = int(uv[0] * self.texture.shape[1])
-        # y = int(uv[1] * self.texture.shape[0])
-        # y = self.texture.shape[0] - y - 1
-        # return self.texture[y, x]
-
         # Characterize uv using basis vectors
         B = np.array([uv[0], uv[1], uv[2]]) - np.array([self.vs[0][0], self.vs[0][1], self.vs[0][2]])
         # X = np.linalg.solve(self.A, B)
@@ -296,7 +279,6 @@ class SquareTexture:
 
         y, x = np.clip([y, x], 0, self.texture.shape[0] - 1)
         return self.texture[y, x]
-        # return self.material.k_d
     def serialize(self):
         return {
             "vs": self.vs.tolist(),
@@ -613,7 +595,10 @@ class PointLight:
         bisector = normalize_float64(light_dir - normalize_float64(ray.direction))
         specular_factor = np.dot(hit.normal, bisector) ** hit.material.p
 
-        return self.intensity * fallout_factor * skidding_factor * (hit.material.k_d + hit.material.k_s * specular_factor)
+        k_d = hit.material.k_d if hit.material.flag != "texture" else hit.material.query_texture(hit_point) / 255
+
+        # return self.intensity * fallout_factor * skidding_factor * (hit.material.k_d + hit.material.k_s * specular_factor)
+        return self.intensity * fallout_factor * skidding_factor * (k_d + hit.material.k_s * specular_factor)
     def serialize(self):
         return {
             "position": self.position.tolist(),
