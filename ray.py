@@ -377,15 +377,23 @@ class Ellipsoid:
         real_roots = np.real(real_roots)
         # Find the closest valid intersection point
         t_min = float("inf")
+        t_max = float("-inf")
         for t in real_roots:
             if ray.start <= t <= ray.end and t < t_min:
+                t_max = t_min
                 t_min = t
         if t_min == float("inf"):
             return no_hit
+        if t_max == float("-inf") or t_max == float("inf"):
+            t_max = t_min
         # Compute intersection details
         intersection_point = ray.origin + t_min * ray.direction
         normal = self.compute_normal(intersection_point)
-        return Hit(t_min, intersection_point, normal, self.material)
+        # return Hit(t_min, intersection_point, normal, self.material)
+        hit = Hit(t_min, intersection_point, normal, self.material)
+        hit.first_t = t_min
+        hit.second_t = t_max
+        return hit
     def compute_normal(self, point):
         """
         Calculate the normal vector at a given point on the ellipsoid's surface.
@@ -505,6 +513,7 @@ class Cylinder:
         real_roots = np.real(real_roots)
         # Step 4: Filter valid roots within cylinder bounds
         t_min = float("inf")
+        t_max = float("-inf")
         intersection_point = None
         for t in real_roots:
             if ray.start <= t <= ray.end:
@@ -512,13 +521,21 @@ class Cylinder:
                 height_from_base = np.dot(point - self.base, self.axis)
                 # Check if point lies within the cylinder's height
                 if 0 <= height_from_base <= self.height and t < t_min:
+                    # t_min = t
+                    t_max = t_min
                     t_min = t
                     intersection_point = point
         if t_min == float("inf"):
             return no_hit
+        if t_max == float("-inf") or t_max == float("inf"):
+            t_max = t_min
         # Step 5: Compute the surface normal at the intersection
         normal = self.compute_normal(intersection_point)
-        return Hit(t_min, intersection_point, normal, self.material)
+        # return Hit(t_min, intersection_point, normal, self.material)
+        hit = Hit(t_min, intersection_point, normal, self.material)
+        hit.first_t = t_min
+        hit.second_t = t_max
+        return hit
     def compute_normal(self, point):
         """
         Compute the surface normal at a given point on the cylinder.
@@ -549,7 +566,7 @@ class Cylinder:
 
  # CSG operations
 
-class ShapeBoolean:
+class ShapeCSG:
     def __init__(self, obj1, obj2, operation):
         self.obj1 = obj1
         self.obj2 = obj2
@@ -560,21 +577,8 @@ class ShapeBoolean:
             return self.union(ray)
         elif self.operation == "intersection":
             return self.intersection(ray)
-        elif self.operation == "difference":
-            return self.difference(ray)
-      
-    def get_intersection_point(self, t, ray):
-        return ray.origin + t * ray.direction
-  
-    def get_hit_normal(self, t, hit1, hit2):
-        # if np.any(t == hit1.first_t) or np.any(t == hit1.second_t):
-        #     return hit1.normal
-        # elif np.any(t == hit2.first_t) or np.any(t == hit2.second_t):
-        #     return hit2.normal
-        if t == hit1.first_t or t == hit1.second_t:
-            return hit1.normal
-        elif t == hit2.first_t or t == hit2.second_t:
-            return hit2.normal
+        elif self.operation == "subtraction":
+            return self.subtraction(ray)
         
     def union(self, ray):
         # print("union")
@@ -589,35 +593,63 @@ class ShapeBoolean:
     def intersection(self, ray):
         hit1 = self.obj1.intersect(ray)
         hit2 = self.obj2.intersect(ray)
-        
-        first_t = max(min(hit1.first_t, hit1.second_t), min(hit2.first_t, hit2.second_t))
-        second_t = min(max(hit1.first_t, hit1.second_t), max(hit2.first_t, hit2.second_t))
 
-        point = self.get_intersection_point(first_t, ray)
-        normal = self.get_hit_normal(first_t, hit1, hit2)
-        return (first_t, first_t, second_t, point, normal, self.material)
+        # The ray must exist the closer object first, and enter the further object later
+        min_hit1_t, min_hit2_t = min(hit1.first_t, hit1.second_t), min(hit2.first_t, hit2.second_t)
+        first_hit_t = max(min_hit1_t, min_hit2_t)
+
+        max_hit1_t, max_hit2_t = max(hit1.first_t, hit1.second_t), max(hit2.first_t, hit2.second_t)
+        second_hit_t = min(max_hit1_t, max_hit2_t)
+
+        if second_hit_t < first_hit_t: return no_hit
+
+        # We have to construct the hit based on the first hit
+        point = ray.origin + first_hit_t * ray.direction
+        if first_hit_t == hit1.first_t or first_hit_t == hit1.second_t:
+            normal = hit1.normal
+            mat = hit1.material
+        else:
+            normal = hit2.normal
+            mat = hit2.material
+
+        hit = Hit(first_hit_t, point, normal, mat)
+        hit.first_t = first_hit_t
+        hit.second_t = second_hit_t
+        # return Hit(first_hit_t, point, normal, mat)
+        return hit
     
-    def difference(self, ray):
+    def subtraction(self, ray):
         hit1 = self.obj1.intersect(ray)
         hit2 = self.obj2.intersect(ray)
-        if hit2.first_t < hit1.first_t and hit1.second_t < hit2.second_t:
-            return no_hit
-        elif hit2.first_t > hit1.second_t or hit2.second_t < hit1.first_t:
-            return hit1
-        elif hit1.first_t < hit2.first_t and hit2.first_t < hit1.second_t:
-            point = self.get_intersection_point(hit2.first_t, ray)
-            normal = self.get_hit_normal(hit2.first_t, hit1, hit2)
-            return Hit(first_t=hit1.first_t, second_t=hit2.first_t, point=point, normal=normal, material=self.material)
-
-        elif hit1.first_t < hit2.second_t and hit2.second_t < hit1.second_t:
-            point = self.get_intersection_point(hit2.second_t, ray)
-            normal = self.get_hit_normal(hit2.second_t, hit1, hit2)
-            return Hit(hit2.second_t, hit1.second_t, point, normal, self.material)
         
-        else: 
-            return no_hit
+        # Assuming we are performing obj1 - obj2
 
+        # Check if obj2 is inside of obj1
+        obj1_first_t, obj1_second_t = min(hit1.first_t, hit1.second_t), max(hit1.first_t, hit1.second_t)
+        obj2_first_t, obj2_second_t = min(hit2.first_t, hit2.second_t), max(hit2.first_t, hit2.second_t)
 
+        if obj1_first_t > obj2_first_t and obj1_second_t < obj2_second_t: return no_hit
+        if obj1_first_t > obj2_second_t or obj1_second_t < obj2_first_t: return hit1
+
+        t = None
+        if obj1_first_t < obj2_first_t and obj1_second_t > obj2_second_t: t = obj2_first_t
+        elif obj1_first_t < obj2_second_t and obj1_second_t > obj2_second_t: t = obj2_second_t
+
+        if t is None: return no_hit
+
+        point = ray.origin + t * ray.direction
+        if t == hit1.first_t or t == hit1.second_t:
+            normal = hit1.normal
+            mat = hit1.material
+        else:
+            normal = hit2.normal
+            mat = hit2.material 
+
+        # return Hit(t, point, normal, mat)
+        hit = Hit(t, point, normal, mat)
+        hit.first_t = obj1_first_t
+        hit.second_t = obj1_second_t
+        return hit
 
 class Camera:
 
